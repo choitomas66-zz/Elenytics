@@ -19,4 +19,4 @@ utilities.o:  utilities.cpp utilities.h
 	$(CC) $(CFLAGS) -c utilities.cpp
 
 clean: 
-	$(RM) *.o *~
+	$(RM) simulation *.o *~
