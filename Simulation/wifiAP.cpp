@@ -4,141 +4,121 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <vector>
+#include "Room.h"
+#include "AP.h"
+#include "utilities.h"
 
 using namespace std;
 
-#define max_W 100
-#define max_L 100
-#define max_AP 4
-#define max_fprint 5
-#define max_calib 10
-#define signal_max 100
-#define signal_min 40
-#define PI 3.1415926535
-#define e 2.718281828
-
-struct fingerPrint{
-    double x[max_AP];
-    double s[max_AP];
-    string section;
-};
-
-pair<int, int> AP[max_AP];
-pair<int, int> fprint[max_fprint];
-pair<double, string> nearest;
-fingerPrint fp[max_fprint];
-fingerPrint usr;
-
-double fRand(double fMin, double fMax)
-{
-    double f = (double)rand() / RAND_MAX;
-    return fMin + f * (fMax - fMin);
-}
-
-// create calibration fingerprints
-void calibrate() {
-
-    // get Data
-    double sum, input[max_calib];
-    fp[0].section = "Meat";
-    fp[1].section = "Dairy";
-    fp[2].section = "Fruits";
-    fp[3].section = "Chips and Chocolates";
-    fp[4].section = "Fish";
-    for(int i = 0; i < max_fprint; i++) {
-        for(int j = 0; j < max_AP; j++) {
-            sum = 0;
-            // random signal strengths within a random range
-            double r = fRand(signal_min, signal_max);
-            double b = fRand(3, 10);
-            for(int k = 0; k < max_calib; k++) {
-                input[k] = fRand(r-b, r+b);
-                sum += input[k];
-            }
-            // average
-            fp[i].x[j] = sum / max_calib;
-            sum = 0;
-            // std dev
-            for(int k = 0; k < max_calib; k++) {
-                sum += (fp[i].x[j] - input[k])*(fp[i].x[j] - input[k]);
-            }
-            sum = pow(sum, 0.5);
-            fp[i].s[j] = sum;
-        }
-    }
-}
-
-//obtain user data
-void user() {
-    // assign random signal strengths
-    double sum, input[max_calib];
-    for(int j = 0; j < max_AP; j++) {
-        sum = 0;
-        for(int k = 0; k < max_calib; k++) {
-            double r = fRand(signal_min, signal_max);
-            input[k] = fRand(r-5, r+5);
-            sum += input[k];
-        }
-        // average
-        usr.x[j] = sum / max_calib;
-        sum = 0;
-        // std dev
-        for(int k = 0; k < max_calib; k++) {
-            sum += (usr.x[j] - input[k])*(usr.x[j] - input[k]);
-        }
-        sum = pow(sum, 0.5);
-        usr.s[j] = sum;
-
-    }
-}
-
-//calculate probability
-double findProb(double fpmu, double fpstd, double usrx) {
-    return (1/(fpstd * sqrt(2*PI))) * pow(e, -0.5*pow(((usrx-fpmu)/fpstd), 2));
-}
-
-//find nearest using probability
-void findNearest() {
-    double prob = 0;
-    int index;
-    for(int i = 0; i < max_fprint; i++) {
-        //find prob
-        double tmp = 1;
-        for(int j = 0; j < max_AP; j++) {
-            cout << "Probability from wifi AP " << j << ": " <<  findProb(fp[i].x[j], fp[i].s[j], usr.x[j]) << endl;
-            tmp *= findProb(fp[i].x[j], fp[i].s[j], usr.x[j]);        
-        }
-        if(tmp > prob) {
-            prob = tmp;
-            index = i;
-        }
-        cout << "Probability nearest location is " << fp[i].section << ": " << tmp << endl << endl;
-    }
-    nearest.first = prob;
-    nearest.second = fp[index].section;
-}
-
-void inputAP() {
-    for(int i = 0; i < max_AP; i++) {
-        cin >> AP[i].first >> AP[i].second;
-    }
-}
-
-int main() {
-   
+int main(){
     srand(time(0));
-    cout << "Calibrating..." << endl;
-    calibrate();
-    for(int i = 0; i < max_fprint; i++) {
-        for(int j = 0; j < max_AP; j++) {
-            cout << "AP: " << j << " reading: " << fp[i].x[j] << " " << fp[i].s[j] << endl;
+
+    int apc = 3; //AP count
+    vector<AP> a;
+    a.push_back(AP(0,10.0,10.0,100.0,20.0)); //add apc number of APs
+    a.push_back(AP(1,10.0,30.0,100.0,15.0));
+    a.push_back(AP(2,35.0,45.0,100.0,10.0));
+
+    //initialize square grid of rooms, position increments upwards and to the right
+    double side = 50; //side length
+    double rs = 2; //rs*rs is the number of rooms
+    vector<Room> vR;
+    double l = side/rs;
+    for(int i = 0; i<rs; i++){
+        for(int j = 0; j<rs; j++){
+            vR.push_back(Room(i*l,j*l,l,l)); //add rooms
         }
     }
-    cout << "Obtaining User Data..." << endl;
-    user();
-    cout << "Finding Nearest..." << endl;
-    findNearest();
-    cout << "Nearest Section: " << nearest.second << endl;
-    cout << "Probability: " << nearest.first << endl;
+
+    double userx = 0;
+    double usery = 0;
+    cout << "Input positon (x y):\n";
+    cin >> userx >> usery;
+    cout << "Expected position: Room (" << (int)(userx/l) <<", "<< (int)(usery/l)<< ")\n";
+
+    int max_fprint = 5; //fingerprints per room
+    int samples = 10; //samples at each point
+
+    cout << "Computing fingerprints for all rooms.\n";
+    for(int i = 0; i < vR.size(); i++){ //for all the rooms
+        for(int j =0; j<max_fprint; j++){ //for all fingerprints
+            double fx = vR[i].getRandomX(); //get random position in the room
+            double fy = vR[i].getRandomY();
+            vector<double> temp;
+            vR[i].mu.push_back(temp);
+            vR[i].std.push_back(temp);
+
+            for(int k = 0; k< apc; k++){ //for all AP
+                double sum = 0;
+                vector<double> s(samples);
+
+                for(int l = 0; l<samples; l++){
+                    s[l] = a[k].getPower(fx, fy); //simply drop in your power calculation here
+                    sum += s[l];
+                }
+                double mean = sum/samples;
+                //cout << "Room: " << i << " AvgPower of AP "<< k << " at (" << fx << ", "<< fy<< "): "<< mean << "\n";
+                sum = 0;
+                //std dev
+                for(int l = 0; l < samples; l++) {
+                    sum += (s[l]-mean)*(s[l]-mean);
+                }
+                sum /= samples;
+                sum = sqrt(sum);
+                vR[i].mu[j].push_back(mean);
+                vR[i].std[j].push_back(sum);
+            }
+        }
+    }
+
+    //get user data (mean and std dev)
+    cout << "Computing user data.\n";
+    vector<double> usermu(apc);
+    vector<double> userstd(apc);
+    for(int i =0; i<apc; i++){ //for all the APs
+        double sum = 0;
+        vector<double> s(samples);
+
+        for(int j =0; j<samples; j++){ //sample a certain number of times
+            s[j] = a[i].getPower(userx, usery);
+            sum += s[j];
+        }
+        double mean = sum/samples;
+        cout << "AvgPower: " << mean << "\n";
+        sum = 0;
+        //std dev
+        for(int l = 0; l < samples; l++) {
+            sum += (s[l]-mean)*(s[l]-mean);
+        }
+        sum /= samples;
+        sum = sqrt(sum);
+        cout << "StdDev: " << sum << "\n";
+        usermu.push_back(mean);
+        userstd.push_back(sum);
+    }
+
+    //find where the user is
+    double prob = 0;
+    int index = 0;
+    for(int i = 0; i<vR.size(); i++){
+        for(int j =0; j<max_fprint; j++){
+            double tmp = 1;
+            for(int k =0; k<apc; k++){
+                cout << "Probability from wifi AP " << k << ": " <<  findProb(vR[i].mu[j][k], vR[i].std[j][k], usermu[k]) << endl;
+                tmp *= findProb(vR[i].mu[j][k], vR[i].std[j][k], usermu[k]);
+            }
+            if(tmp > prob){
+                prob = tmp;
+                index = i;
+            }
+        }
+    }
+
+    int calcx = index/(int)rs;
+    int calcy = index%(int)rs;
+    cout << "Probability: " << prob << "\n";
+    cout << "Calculated position: " << index << " or room (" << calcx << ", "<< calcy<<")\n";
+
     return 0;
 }

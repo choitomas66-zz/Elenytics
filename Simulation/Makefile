@@ -3,11 +3,11 @@ CFLAGS = -g -Wall
 
 default: simulation
 
-simulation:  wifiAPv2.o Room.o AP.o utilities.o
-	$(CC) $(CFLAGS) -o simulation wifiAPv2.o Room.o AP.o utilities.o
+simulation:  wifiAP.o Room.o AP.o utilities.o
+	$(CC) $(CFLAGS) -o simulation wifiAP.o Room.o AP.o utilities.o
 
-wifiAPv2.o:  wifiAPv2.cpp utilities.h Room.h AP.h
-	$(CC) $(CFLAGS) -c wifiAPv2.cpp
+wifiAP.o:  wifiAP.cpp utilities.h Room.h AP.h
+	$(CC) $(CFLAGS) -c wifiAP.cpp
 
 Room.o:  room.cpp Room.h 
 	$(CC) $(CFLAGS) -c room.cpp
