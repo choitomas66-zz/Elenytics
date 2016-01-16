@@ -61,9 +61,9 @@ void calibrate() {
             // std dev
             for(int k = 0; k < max_calib; k++) {
                 sum += (fp[i].x[j] - input[k])*(fp[i].x[j] - input[k]);
-                sum = pow(sum, 0.5);
-                fp[i].s[j] = sum;
             }
+            sum = pow(sum, 0.5);
+            fp[i].s[j] = sum;
         }
     }
 }
@@ -85,9 +85,10 @@ void user() {
         // std dev
         for(int k = 0; k < max_calib; k++) {
             sum += (usr.x[j] - input[k])*(usr.x[j] - input[k]);
-            sum = pow(sum, 0.5);
-            usr.s[j] = sum;
         }
+        sum = pow(sum, 0.5);
+        usr.s[j] = sum;
+
     }
 }
 
