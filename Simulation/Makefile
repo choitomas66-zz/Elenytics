@@ -9,11 +9,11 @@ simulation:  wifiAP.o Room.o AP.o utilities.o
 wifiAP.o:  wifiAP.cpp utilities.h Room.h AP.h
 	$(CC) $(CFLAGS) -c wifiAP.cpp
 
-Room.o:  room.cpp Room.h 
-	$(CC) $(CFLAGS) -c room.cpp
+Room.o:  Room.cpp Room.h 
+	$(CC) $(CFLAGS) -c Room.cpp
 
 APP.o:  AP.cpp AP.h
-	$(CC) $(CFLAGS) -c AP.cpp
+	$(CC) $(CFLAGS) -c AP.cpp	
 
 utilities.o:  utilities.cpp utilities.h 
 	$(CC) $(CFLAGS) -c utilities.cpp
